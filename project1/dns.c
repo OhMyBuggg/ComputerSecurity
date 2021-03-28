@@ -22,12 +22,12 @@ uint16_t checkSum(uint16_t * buff, uint16_t nbytes) {
 // fuuuuuuuuuuuuuuuuuuuuuuuuuck, what was that
 void constructIPHeader(struct ip * ip_header, const char * src_ip, const char * dst_ip, uint16_t len) {
     ip_header->ip_hl = 5;
-    ip_header->ip_v = 4; // IPVERSION
-    ip_header->ip_tos = 16; // IPTOS_PREC_ROUTINE
+    ip_header->ip_v = IPVERSION; // IPVERSION 4
+    ip_header->ip_tos = IPTOS_PREC_ROUTINE; // IPTOS_PREC_ROUTINE 16
     ip_header->ip_id = htons(getpid());
     ip_header->ip_off = 0;
     ip_header->ip_ttl = 64;
-    ip_header->ip_p = 17; // IPPROTO_UDP
+    ip_header->ip_p = IPPROTO_UDP; // IPPROTO_UDP 17
     ip_header->ip_src.s_addr = inet_addr(src_ip);
     ip_header->ip_dst.s_addr = inet_addr(dst_ip); // put destination IP address
     
@@ -98,7 +98,7 @@ void IPv4CheckSum(const struct ip * ip_header, struct udphdr * udp_header) {
     ps->ip_src = ip_header->ip_src.s_addr;
     ps->ip_dst = ip_header->ip_dst.s_addr;
     ps->zeroes = 0;
-    ps->protocol = 17; // IPPROTO_UDP
+    ps->protocol = IPPROTO_UDP; // IPPROTO_UDP 17
     ps->ulen = udp_header->uh_ulen;
 
     memcpy(ps_data + sizeof(ps_header), udp_header, udp_len);
