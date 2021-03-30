@@ -81,7 +81,7 @@ void formatDNS(char * buff, const char * hostname) {
 // what this function does????
 uint16_t constructDNS(char * dns_message, const char * hostname, uint16_t record_type) {
     dns_header * dns = (dns_header *)dns_message;
-    dns->id = 0x667B; //htons(getpid());
+    dns->id = 0x7B66; //htons(getpid());
     dns->flags = htons(0x0100); // whaaaaaaaaaaat
     dns->qcount = htons(1);
     dns->answ = 0;
