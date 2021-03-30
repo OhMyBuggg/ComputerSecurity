@@ -1,37 +1,54 @@
 #include "dns.h"
 
 // IP Header checksum
-uint16_t checkSum(uint16_t * buff, uint16_t nbytes) {
-    unsigned long sum;
+// uint16_t checkSum(uint16_t * buff, uint16_t nbytes) {
+//     unsigned long sum;
     
-    for(sum = 0; nbytes > 0; nbytes--) {
-        sum += *buff++;
-    }
+//     for(sum = 0; nbytes > 0; nbytes--) {
+//         sum += *buff++;
+//     }
 
-    // I can't understand here
-    if (nbytes % 2) {
-        sum += *(uint8_t*)buff;
-    }
+//     // I can't understand here
+//     if (nbytes % 2) {
+//         sum += *(uint8_t*)buff;
+//     }
     
-    sum = ((sum >> 16) + (sum & 0xFFFF));
-    sum += (sum >> 16);
+//     sum = ((sum >> 16) + (sum & 0xFFFF));
+//     sum += (sum >> 16);
 
-    return (uint16_t)(~sum);
+//     return (uint16_t)(~sum);
+// }
+
+uint16_t checkSum(uint16_t * buffer, uint16_t nbytes){
+	unsigned long sum = 0;
+    // Accumulate checksum
+	for(uint16_t i = 0; i < nbytes; i += 2){
+        sum += *buffer++;
+	}
+    // Handle odd-sized case
+	if (nbytes % 2){
+		sum += *(uint8_t*)buffer;
+	}
+	// Add carry
+	sum = (sum >> 16) + (sum & 0xffff);
+	// Add additional carry
+	sum += (sum >> 16);
+	return (uint16_t)~sum;
 }
 
 // fuuuuuuuuuuuuuuuuuuuuuuuuuck, what was that
 void constructIPHeader(struct ip * ip_header, const char * src_ip, const char * dst_ip, uint16_t len) {
     ip_header->ip_hl = 5;
-    ip_header->ip_v = IPVERSION; // IPVERSION 4
-    ip_header->ip_tos = IPTOS_PREC_ROUTINE; // IPTOS_PREC_ROUTINE 16
+    ip_header->ip_v = IPVERSION;//4; // IPVERSION;
+    ip_header->ip_tos = IPTOS_PREC_ROUTINE;//16; // IPTOS_PREC_ROUTINE;
     ip_header->ip_id = htons(getpid());
     ip_header->ip_off = 0;
     ip_header->ip_ttl = 64;
-    ip_header->ip_p = IPPROTO_UDP; // IPPROTO_UDP 17
+    ip_header->ip_p = IPPROTO_UDP;//17; // IPPROTO_UDP;
     ip_header->ip_src.s_addr = inet_addr(src_ip);
     ip_header->ip_dst.s_addr = inet_addr(dst_ip); // put destination IP address
-    
-    ip_header->ip_len = sizeof(ip_header) + len;
+    printf("%d\n",len);
+    ip_header->ip_len = sizeof(struct ip) + len;
     ip_header->ip_sum = checkSum((uint16_t *)ip_header, ip_header->ip_len);
 }
 
@@ -64,7 +81,7 @@ void formatDNS(char * buff, const char * hostname) {
 // what this function does????
 uint16_t constructDNS(char * dns_message, const char * hostname, uint16_t record_type) {
     dns_header * dns = (dns_header *)dns_message;
-    dns->id = htons(getpid());
+    dns->id = 0x7B66; //htons(getpid());
     dns->flags = htons(0x0100); // whaaaaaaaaaaat
     dns->qcount = htons(1);
     dns->answ = 0;
@@ -98,7 +115,7 @@ void IPv4CheckSum(const struct ip * ip_header, struct udphdr * udp_header) {
     ps->ip_src = ip_header->ip_src.s_addr;
     ps->ip_dst = ip_header->ip_dst.s_addr;
     ps->zeroes = 0;
-    ps->protocol = IPPROTO_UDP; // IPPROTO_UDP 17
+    ps->protocol = IPPROTO_UDP;//17; // IPPROTO_UDP;
     ps->ulen = udp_header->uh_ulen;
 
     memcpy(ps_data + sizeof(ps_header), udp_header, udp_len);
