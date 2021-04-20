@@ -35,8 +35,12 @@ def get_local_info():
     netmask = normal_internet['netmask']
     broadcast = normal_internet['broadcast']
     slash = IPAddress(netmask).netmask_bits()
+
+    # obtain gateway
+    gws = netifaces.gateways()
+    gw = gws['default'][netifaces.AF_INET][0]
     
-    return address, netmask, broadcast, str(slash)
+    return address, netmask, broadcast, str(slash), gw
 
 def getDevice(ip):
     request = scapy.ARP()
@@ -67,14 +71,14 @@ def sslSplit():
 
 if __name__ == '__main__':
 
-    address, netmask, broadcast, slash = get_local_info()
+    address, netmask, broadcast, slash, gw = get_local_info()
 
     # print(get_mac('192.168.99.100')) 
     getDevice(address + '/' + slash)
 
     target_ip = "192.168.99.100" # Enter your target IP
-    gateway_ip = "192.168.99.1" # Enter your gateway's IP
-
+    # gateway_ip = "192.168.99.1" # Enter your gateway's IP
+    gateway_ip = gw
     # t = threading.Thread(target = sslSplit)
     # t.start()
 
