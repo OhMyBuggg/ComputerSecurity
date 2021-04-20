@@ -8,12 +8,19 @@ import os
 from netaddr import IPAddress
 
 def get_mac(ip):
-    arp_request = scapy.ARP(pdst = ip)
-    broadcast = scapy.Ether(dst ="ff:ff:ff:ff:ff:ff")
-    arp_request_broadcast = broadcast / arp_request
-    answered_list = scapy.srp(arp_request_broadcast, timeout = 5, verbose = False)[0]
+    for a in range(10):
+        arp_request = scapy.ARP(pdst = ip)
+        broadcast = scapy.Ether(dst ="ff:ff:ff:ff:ff:ff")
+        arp_request_broadcast = broadcast / arp_request
+        answered_list, unanswer = scapy.srp(arp_request_broadcast, timeout = 5, verbose = False)
+        if len(answered_list) == 0:
+            print("no find")
+            continue
+        else:
+            return answered_list[0][1].hwsrc
+    print("Can't find mac address")
+    os.exit(1)
 
-    return answered_list[0][1].hwsrc
     # return 'b4:6b:fc:1d:e8:9f' # error here, use this for temp
 
 def spoof(target_ip, spoof_ip):
@@ -76,7 +83,7 @@ if __name__ == '__main__':
     # print(get_mac('192.168.99.100')) 
     getDevice(address + '/' + slash)
 
-    target_ip = "192.168.99.100" # Enter your target IP
+    target_ip = "192.168.99.1" # Enter your target IP
     # gateway_ip = "192.168.99.1" # Enter your gateway's IP
     gateway_ip = gw
     # t = threading.Thread(target = sslSplit)
