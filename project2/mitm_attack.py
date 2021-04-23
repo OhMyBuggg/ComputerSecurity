@@ -152,7 +152,7 @@ def sslSplit(stop):
     os.system("iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-ports 8443")
 
     # run sslsplit
-    command =   'sslsplit -D -l ' + mypath + '/sslsplit/connections.log'\
+    command =   'sslsplit -d -l ' + mypath + '/sslsplit/connections.log'\
             ' -j ' + mypath + '/sslsplit/'\
             ' -S ' + mypath + '/sslsplit/logdir/'\
             ' -k ca.key -c ca.crt ssl 0.0.0.0 8443 tcp 0.0.0.0 8080'
