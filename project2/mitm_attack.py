@@ -208,6 +208,7 @@ if __name__ == '__main__':
         print("[-] Arp Spoof Stopped")
         stop_threads = True
         t.join()
+        os.system('iptables -t nat -F')
         print("stop thread")
 
     # interface = netifaces.interfaces()[1]
