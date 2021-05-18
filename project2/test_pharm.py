@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 import netfilterqueue
 import scapy.all as scapy
+import os
 
 def process_packet(packet):
+    
     scapy_packet = scapy.IP(packet.get_payload())
     print("[+] Get target package, determine if it has DNS request")
     if scapy_packet.haslayer(scapy.DNSRR):

