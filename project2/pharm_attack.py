@@ -70,7 +70,7 @@ def get_local_info():
     
     return address, netmask, broadcast, str(slash), gw
 
-def getDevice(ip):
+def getDevice(ip, gw):
     request = scapy.ARP()
     request.pdst = ip
     broadcast = scapy.Ether()
@@ -85,7 +85,8 @@ def getDevice(ip):
     print('IP         MAC')
     print('----------------------------')
     for element in clients:
-        print(element[1].psrc + "   " + element[1].hwsrc)
+        if element[1].psrc != gw: 
+            print(element[1].psrc + "   " + element[1].hwsrc)
     print(' ')
 
 # def sslSplit(stop):
@@ -99,7 +100,7 @@ if __name__ == '__main__':
     address, netmask, broadcast, slash, gw = get_local_info()
 
     # print(get_mac('192.168.99.100')) 
-    getDevice(address + '/' + slash)
+    getDevice(address + '/' + slash, gw)
 
     target_ip = "192.168.99.100" # Enter your target IP
     # gateway_ip = "192.168.99.1" # Enter your gateway's IP
