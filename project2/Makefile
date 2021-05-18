@@ -1,6 +1,8 @@
 all:
-	pyinstaller -F mitm_attack.py
-clean:
-	rm -rf build
-	rm -rf dist
-	rm mitm_attack.spec
+	mkdir sslsplit
+	mkdir sslsplit/logdir
+	mv mitm_attack.py mitm_attack
+	mv pharm_attack.py pharm_attack
+	chmod +x mitm_attack pharm_attack
+clear:
+	rm -rf sslsplit

