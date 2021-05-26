@@ -56,14 +56,14 @@ int main(int argc, char *argv[]){
     if(pid == 0){
         // child
         // execute cat
-        char a[] = "cat";
+        char a[] = "cat_backup";
         argv[0] = a;
         // for(int i = 0; i < argc; i++){
         //     printf("%s\n", argv[i]);
         // }
         // absolutely path
         // int outcome = execvp("/home/wc/computer_security/ComputerSecurity/project3/task2/cat", argv);
-        int outcome = execvp("/home/csc2021/cat", argv);
+        int outcome = execvp("/home/csc2021/cat_backup", argv);
         if(outcome == -1)printf("error in execvp\n");
     }
     else{
