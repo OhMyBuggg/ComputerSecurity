@@ -9,7 +9,7 @@ import paramiko
 
 client = paramiko.SSHClient()
 client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-client.connect('172.18.13.106', username='csc2021', password='csc2021')
+client.connect('192.168.99.213', username='csc2021', password='csc20210')
 stdin, stdout, stderr = client.exec_command('ls')
 for line in stdout:
     print('... ' + line.strip('\n'))
