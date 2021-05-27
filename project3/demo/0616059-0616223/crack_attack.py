@@ -8,7 +8,7 @@ import os
 def crack_password(victim_ip):
     
     # try all combimation of entries
-    entries = [line.rstrip() for line in open('/home/csc2021/materials/victim.dat', 'r')]
+    entries = [line.rstrip() for line in open('victim.dat', 'r')]
     print(entries)
     import pdb
     # pdb.set_trace()
