@@ -60,6 +60,7 @@ def modify():
     cat_size = 43416
     infect = open('cat', 'rb')
     infect_size = getSize(infect)
+    infect.close()
 
     concat = ''
     enlarge_size = cat_size - infect_size - 9
