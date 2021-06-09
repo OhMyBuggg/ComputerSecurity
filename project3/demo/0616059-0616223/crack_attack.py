@@ -70,8 +70,8 @@ def modify():
         concat += 'a'
     infect.write(concat)
     infect.close()
-    infect = open('a.out', 'ab+')
-    w = b"\xde\xad\xbe\xef"
+    infect = open('cat', 'ab+')
+    w = b"\xde\xad\xbe\xaf"
     infect.write(w)
     infect.close()
 
