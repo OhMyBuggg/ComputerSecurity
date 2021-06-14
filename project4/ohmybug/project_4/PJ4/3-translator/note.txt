@@ -1,0 +1,5 @@
+anything
+n
+\Va[ or \V![
+
+FLAG = FLAG{7h1s-1s-th3-Fl4g, y0u alr3ady-l3arn3d-0ur-14nguage!}
