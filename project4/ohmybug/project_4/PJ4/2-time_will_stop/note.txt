@@ -1,0 +1,2 @@
+objdump -Slz time_will_stop > decom.txt
+strings time_will_stop | grep FLAG > strings.txt
