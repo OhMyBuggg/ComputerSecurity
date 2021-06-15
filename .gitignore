@@ -7,3 +7,4 @@ mid/
 test/
 *.ova
 *.run
+.vscode/
