@@ -1,0 +1,4 @@
+- it use multicast, IGMPv3
+    - seems can't modify MAC address to join group
+- use blurtooth to transmit bell signal
+- cut wifi can solved everything

